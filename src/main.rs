@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 
 #[derive(Component)]
-struct Background;
+struct Background {
+    speed: f32,
+}
+
 
 #[derive(Component)]
 struct AnimationIndices {
@@ -13,18 +16,20 @@ struct AnimationIndices {
 struct AnimationTimer(Timer);
 const WIDTH: f32 = 768.;
 const HEIGHT: f32 = 576.;
+const BG_HEIGHT: f32 = 608.;
+const SCROLL_SPEED: f32 = 3.0;
 
 fn main() {
     App::new() // prevents blurry sprites
         .add_startup_system(setup)
-        .add_systems((move_background, animate_sprite))
+        .add_systems((scroll_background, animate_sprite))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Shoot Them Up 3".into(),
                         resolution: (WIDTH, HEIGHT).into(),
-                        position: WindowPosition::Centered(MonitorSelection::Current),
+                        position: WindowPosition::Centered(MonitorSelection::Primary),
                         resizable: false,
                         ..default()
                     }),
@@ -55,15 +60,13 @@ fn animate_sprite(
     }
 }
 
-fn move_background(mut background_query: Query<(&Background, &mut Transform)>, time: Res<Time>) {
-    let background_speed = 450.;
+fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
+    for (mut transform, background) in query.iter_mut() {
+        transform.translation.y += background.speed;
 
-    for (_, mut transform) in background_query.iter_mut() {
-        transform.translation.y -= time.delta_seconds() * background_speed;
-
-        // When the background sprite goes out of view, move it back to the other side
-        if transform.translation.y <= -HEIGHT {
-            transform.translation.y += 2. * HEIGHT;
+        if transform.translation.y >= BG_HEIGHT * 3. {
+            // If the background is fully out of view, reset its position.
+            transform.translation.y -= 2.0 * BG_HEIGHT * 3.;
         }
     }
 }
@@ -74,26 +77,20 @@ fn setup(
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
     let background_texture = asset_server.load("desert-backgorund-looped.png");
-    let scale_x = WIDTH / 256.;
-    let scale_y = HEIGHT / 608.;
-
-    // Preserve the aspect ratio
-    let scale = scale_x.max(scale_y);
-    error!("{:?}", scale);
 
     // Spawn two background sprites
-    for i in 0..2 {
+    for i in 0..10 {
         commands
             .spawn(SpriteBundle {
                 texture: background_texture.clone(),
                 transform: Transform {
-                    translation: Vec3::new(0., i as f32 * (608.), 0.),
+                    translation: Vec3::new(0., BG_HEIGHT * 3. * i as f32 - BG_HEIGHT * 3., 0.),
                     scale: Vec3::new(3., 3., 3.),
                     ..Default::default()
                 },
                 ..Default::default()
             })
-            .insert(Background);
+            .insert(Background { speed: SCROLL_SPEED });
     }
 
 
