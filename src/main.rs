@@ -17,7 +17,7 @@ struct AnimationTimer(Timer);
 const WIDTH: f32 = 768.;
 const HEIGHT: f32 = 576.;
 const BG_HEIGHT: f32 = 608.;
-const SCROLL_SPEED: f32 = 3.0;
+const SCROLL_SPEED: f32 = -3.;
 
 fn main() {
     App::new() // prevents blurry sprites
@@ -64,7 +64,7 @@ fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
     for (mut transform, background) in query.iter_mut() {
         transform.translation.y += background.speed;
 
-        if transform.translation.y >= BG_HEIGHT * 3. {
+        if transform.translation.y <= -BG_HEIGHT * 3. {
             // If the background is fully out of view, reset its position.
             transform.translation.y -= 2.0 * BG_HEIGHT * 3.;
         }
