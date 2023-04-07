@@ -11,12 +11,6 @@ struct AnimationState {
 #[derive(Component)]
 struct Background;
 
-#[derive(Component)]
-struct LinearEasing {
-    time: f32,
-    duration: f32,
-}
-
 const WIDTH: f32 = 768.;
 const HEIGHT: f32 = 576.;
 
@@ -69,35 +63,17 @@ fn animate_sprite_on_keypress(
     }
 }
 
-// fn move_background(mut background_query: Query<(&Background, &mut Transform)>, time: Res<Time>) {
-//     let background_speed = 150.0;
-//     let loop_at = -HEIGHT;
-//     for (_, mut transform) in background_query.iter_mut() {
-//         transform.translation.y -= time.delta_seconds() * background_speed;
-//         if transform.translation.y <= loop_at {
-//             transform.translation.y = 0.0;
-//         }
-//     }
-// }
+fn move_background(mut background_query: Query<(&Background, &mut Transform)>, time: Res<Time>) {
+    let background_speed = 450.;
 
-fn move_background(
-    mut background_query: Query<(&Background, &mut Transform, &mut LinearEasing)>,
-    time: Res<Time>
-) {
-    let base_speed = 300.0;
-    let loop_at = -HEIGHT;
+    for (_, mut transform) in background_query.iter_mut() {
+        transform.translation.y -= time.delta_seconds() * background_speed;
 
-    for (_, mut transform, mut easing) in background_query.iter_mut() {
-        easing.time = easing.time.min(easing.duration);
-        let t = easing.time / easing.duration;
-        let eased_speed = base_speed * t;
+        error!("{:?}", transform);
 
-        transform.translation.y -= time.delta_seconds() * eased_speed;
-        if transform.translation.y <= loop_at {
-            transform.translation.y = 0.0;
-            easing.time = 0.0; // Reset easing timer
-        } else {
-            easing.time += time.delta_seconds();
+        // When the background sprite goes out of view, move it back to the other side
+        if transform.translation.y <= -HEIGHT {
+            transform.translation.y += 2. * HEIGHT;
         }
     }
 }
@@ -107,21 +83,22 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) {
+    let sprite_size = Vec2::new(WIDTH, HEIGHT);
     let background_texture = asset_server.load("desert-backgorund-looped.png");
-    commands
-        .spawn(SpriteBundle {
-            texture: background_texture,
-            transform: Transform::from_scale(Vec3::new(3.0, 3.0, -1.0)),
-            ..Default::default()
-        })
-        .insert(Background).insert(LinearEasing {
-            time: 0.0,  // Initialize the easing timer to 0 seconds
-            duration: 1.0,  // Set the easing duration, e.g., 1 second would mean smooth movement over a period of 1 second
-        });
+    // Spawn two background sprites
+    for i in 0..2 {
+        commands
+            .spawn(SpriteBundle {
+                texture: background_texture.clone(),
+                transform: Transform::from_xyz(0., i as f32 * sprite_size.y, 0.),
+                ..Default::default()
+            })
+            .insert(Background);
+    }
 
     let texture_handle = asset_server.load("ship.png");
     let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(16.0, 24.0), 5, 2, None, None);
+        TextureAtlas::from_grid(texture_handle, Vec2::new(16., 24.), 5, 2, None, None);
     let texture_atlas_handle = texture_atlases.add(texture_atlas);
 
     commands.spawn(Camera2dBundle::default());
@@ -129,7 +106,7 @@ fn setup(
         .spawn(SpriteSheetBundle {
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(2),
-            transform: Transform::from_scale(Vec3::new(3.0, 3.0, 30.0)),
+            transform: Transform::from_xyz(0., 0., 1.),
             ..default()
         })
         .insert(AnimationState {
