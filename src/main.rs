@@ -64,9 +64,9 @@ fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
     for (mut transform, background) in query.iter_mut() {
         transform.translation.y += background.speed;
 
-        if transform.translation.y <= -BG_HEIGHT * 3. {
+        if transform.translation.y <= -(BG_HEIGHT * 3.) {
             // If the background is fully out of view, reset its position.
-            transform.translation.y -= 2.0 * BG_HEIGHT * 3.;
+            transform.translation.y = BG_HEIGHT * 3.;
         }
     }
 }
@@ -79,12 +79,12 @@ fn setup(
     let background_texture = asset_server.load("desert-backgorund-looped.png");
 
     // Spawn two background sprites
-    for i in 0..10 {
+    for i in 0..2 {
         commands
             .spawn(SpriteBundle {
                 texture: background_texture.clone(),
                 transform: Transform {
-                    translation: Vec3::new(0., BG_HEIGHT * 3. * i as f32 - BG_HEIGHT * 3., 0.),
+                    translation: Vec3::new(0., BG_HEIGHT * 3. * i as f32, 0.),
                     scale: Vec3::new(3., 3., 3.),
                     ..Default::default()
                 },
