@@ -14,10 +14,13 @@ struct AnimationIndices {
 
 #[derive(Component, Deref, DerefMut)]
 struct AnimationTimer(Timer);
-const WIDTH: f32 = 768.;
-const HEIGHT: f32 = 576.;
+
+const SCALE: f32 = 3.1;
+const WIDTH: f32 = 256. * SCALE;
+const HEIGHT: f32 = 192. * SCALE;
 const BG_HEIGHT: f32 = 608.;
 const SCROLL_SPEED: f32 = -3.;
+
 
 fn main() {
     App::new() // prevents blurry sprites
@@ -64,9 +67,9 @@ fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
     for (mut transform, background) in query.iter_mut() {
         transform.translation.y += background.speed;
 
-        if transform.translation.y <= -(BG_HEIGHT * 3.) {
+        if transform.translation.y <= -(BG_HEIGHT * SCALE) {
             // If the background is fully out of view, reset its position.
-            transform.translation.y = BG_HEIGHT * 3.;
+            transform.translation.y = BG_HEIGHT * SCALE;
         }
     }
 }
@@ -84,8 +87,8 @@ fn setup(
             .spawn(SpriteBundle {
                 texture: background_texture.clone(),
                 transform: Transform {
-                    translation: Vec3::new(0., BG_HEIGHT * 3. * i as f32, 0.),
-                    scale: Vec3::new(3., 3., 3.),
+                    translation: Vec3::new(0., BG_HEIGHT * SCALE * i as f32, 0.),
+                    scale: Vec3::splat(SCALE),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -108,7 +111,7 @@ fn setup(
             sprite: TextureAtlasSprite::new(2),
             transform: Transform {
                 translation: Vec3::new(0., 0., 1.),
-                scale: Vec3::new(3., 3., 1.),
+                scale: Vec3::splat(SCALE),
                 ..Default::default()
             },
             ..default()
