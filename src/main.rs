@@ -1,22 +1,5 @@
 use bevy::prelude::*;
 
-#[derive(Component)]
-struct Background {
-    speed: f32,
-}
-
-#[derive(Component)]
-struct AnimationIndices {
-    first: usize,
-    last: usize,
-}
-
-#[derive(Component, Deref, DerefMut)]
-struct AnimationTimer(Timer);
-
-#[derive(Component)]
-struct Ship;
-
 const SCALE: f32 = 3.;
 const WIDTH: f32 = 256. * SCALE;
 const HEIGHT: f32 = 192. * SCALE;
@@ -46,6 +29,71 @@ fn main() {
                 .set(ImagePlugin::default_nearest()),
         )
         .run();
+}
+
+#[derive(Component)]
+struct Background {
+    speed: f32,
+}
+
+#[derive(Component)]
+struct AnimationIndices {
+    first: usize,
+    last: usize,
+}
+
+#[derive(Component, Deref, DerefMut)]
+struct AnimationTimer(Timer);
+
+#[derive(Component)]
+struct Ship;
+
+fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+) {
+    let background_texture = asset_server.load("desert-backgorund-looped.png");
+
+    // Spawn two background sprites
+    for i in 0..2 {
+        commands
+            .spawn(SpriteBundle {
+                texture: background_texture.clone(),
+                transform: Transform {
+                    translation: Vec3::new(0., BG_HEIGHT * SCALE * i as f32, 0.),
+                    scale: Vec3::splat(SCALE),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .insert(Background {
+                speed: SCROLL_SPEED,
+            });
+    }
+
+    let texture_handle = asset_server.load("ship.png");
+    let texture_atlas =
+        TextureAtlas::from_grid(texture_handle, Vec2::new(16., 24.), 5, 2, None, None);
+    let texture_atlas_handle = texture_atlases.add(texture_atlas);
+    let animation_indices = AnimationIndices { first: 2, last: 7 };
+
+    commands.spawn(Camera2dBundle::default());
+    commands.spawn((
+        SpriteSheetBundle {
+            texture_atlas: texture_atlas_handle,
+            sprite: TextureAtlasSprite::new(2),
+            transform: Transform {
+                translation: Vec3::new(0., -80. * SCALE, 1.),
+                scale: Vec3::splat(SCALE),
+                ..Default::default()
+            },
+            ..default()
+        },
+        animation_indices,
+        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Ship,
+    ));
 }
 
 fn animate_sprite(
@@ -97,50 +145,4 @@ fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
     }
 }
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlas>>,
-) {
-    let background_texture = asset_server.load("desert-backgorund-looped.png");
 
-    // Spawn two background sprites
-    for i in 0..2 {
-        commands
-            .spawn(SpriteBundle {
-                texture: background_texture.clone(),
-                transform: Transform {
-                    translation: Vec3::new(0., BG_HEIGHT * SCALE * i as f32, 0.),
-                    scale: Vec3::splat(SCALE),
-                    ..Default::default()
-                },
-                ..Default::default()
-            })
-            .insert(Background {
-                speed: SCROLL_SPEED,
-            });
-    }
-
-    let texture_handle = asset_server.load("ship.png");
-    let texture_atlas =
-        TextureAtlas::from_grid(texture_handle, Vec2::new(16., 24.), 5, 2, None, None);
-    let texture_atlas_handle = texture_atlases.add(texture_atlas);
-    let animation_indices = AnimationIndices { first: 2, last: 7 };
-
-    commands.spawn(Camera2dBundle::default());
-    commands.spawn((
-        SpriteSheetBundle {
-            texture_atlas: texture_atlas_handle,
-            sprite: TextureAtlasSprite::new(2),
-            transform: Transform {
-                translation: Vec3::new(0., -80. * SCALE, 1.),
-                scale: Vec3::splat(SCALE),
-                ..Default::default()
-            },
-            ..default()
-        },
-        animation_indices,
-        AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
-        Ship,
-    ));
-}
