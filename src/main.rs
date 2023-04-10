@@ -5,7 +5,6 @@ struct Background {
     speed: f32,
 }
 
-
 #[derive(Component)]
 struct AnimationIndices {
     first: usize,
@@ -15,17 +14,23 @@ struct AnimationIndices {
 #[derive(Component, Deref, DerefMut)]
 struct AnimationTimer(Timer);
 
-const SCALE: f32 = 3.1;
+#[derive(Component)]
+struct Ship;
+
+const SCALE: f32 = 3.;
 const WIDTH: f32 = 256. * SCALE;
 const HEIGHT: f32 = 192. * SCALE;
 const BG_HEIGHT: f32 = 608.;
-const SCROLL_SPEED: f32 = -3.;
-
+const SCROLL_SPEED: f32 = -1. * SCALE;
+const SHIP_SPEED: f32 = 100. * SCALE;
+const TIME_STEP: f32 = 1.0 / 60.0;
+const RIGHT_BOUND: f32 = WIDTH / 2. - (17. * SCALE / 2.);
+const LEFT_BOUND: f32 = -(WIDTH / 2. - (17. * SCALE / 2.));
 
 fn main() {
     App::new() // prevents blurry sprites
         .add_startup_system(setup)
-        .add_systems((scroll_background, animate_sprite))
+        .add_systems((scroll_background, animate_sprite, move_ship))
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -63,6 +68,24 @@ fn animate_sprite(
     }
 }
 
+fn move_ship(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Transform, With<Ship>>) {
+    let mut paddle_transform = query.single_mut();
+    let mut direction = 0.0;
+
+    if keyboard_input.pressed(KeyCode::Left) {
+        direction -= 1.0;
+    }
+
+    if keyboard_input.pressed(KeyCode::Right) {
+        direction += 1.0;
+    }
+
+    // Calculate the new horizontal paddle position based on player input
+    let new_paddle_position = paddle_transform.translation.x + direction * SHIP_SPEED * TIME_STEP;
+
+    paddle_transform.translation.x = new_paddle_position.clamp(LEFT_BOUND, RIGHT_BOUND);
+}
+
 fn scroll_background(mut query: Query<(&mut Transform, &Background)>) {
     for (mut transform, background) in query.iter_mut() {
         transform.translation.y += background.speed;
@@ -93,10 +116,10 @@ fn setup(
                 },
                 ..Default::default()
             })
-            .insert(Background { speed: SCROLL_SPEED });
+            .insert(Background {
+                speed: SCROLL_SPEED,
+            });
     }
-
-
 
     let texture_handle = asset_server.load("ship.png");
     let texture_atlas =
@@ -110,7 +133,7 @@ fn setup(
             texture_atlas: texture_atlas_handle,
             sprite: TextureAtlasSprite::new(2),
             transform: Transform {
-                translation: Vec3::new(0., 0., 1.),
+                translation: Vec3::new(0., -80. * SCALE, 1.),
                 scale: Vec3::splat(SCALE),
                 ..Default::default()
             },
@@ -118,5 +141,6 @@ fn setup(
         },
         animation_indices,
         AnimationTimer(Timer::from_seconds(0.1, TimerMode::Repeating)),
+        Ship,
     ));
 }
