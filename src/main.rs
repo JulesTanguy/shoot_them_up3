@@ -5,12 +5,13 @@ const SCROLL_SPEED: f32 = -1. * SCALE;
 const SHIP_SPEED: f32 = 75. * SCALE;
 const TIME_STEP: f32 = 1.0 / 60.0;
 
-// Bounds
-const RIGHT_BOUND: f32 = WIDTH / 2. - (16. * SCALE / 2.);
-const LEFT_BOUND: f32 = -(WIDTH / 2. - (16. * SCALE / 2.));
+// Screen bounds
+const RIGHT_BOUND: f32 = SCREEN_SIZE / 2. - (16. * SCALE / 2.);
+const LEFT_BOUND: f32 = -(SCREEN_SIZE / 2. - (16. * SCALE / 2.));
+const ENEMIES_Y_BOUNDS: f32 = SCREEN_SIZE / 2. - (32. * SCALE / 2.);
+const ENEMIES_X_BOUNDS: f32 = SCREEN_SIZE / 2. - (32. * SCALE / 2.);
 const SCALE: f32 = 3.;
-const WIDTH: f32 = 256. * SCALE;
-const HEIGHT: f32 = 256. * SCALE;
+const SCREEN_SIZE: f32 = 256. * SCALE;
 const BG_HEIGHT: f32 = 608.;
 
 struct EnemiesTexturePathAndSize {
@@ -51,7 +52,7 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Shoot Them Up 3".into(),
-                        resolution: (WIDTH, HEIGHT).into(),
+                        resolution: (SCREEN_SIZE, SCREEN_SIZE).into(),
                         position: WindowPosition::Centered(MonitorSelection::Primary),
                         resizable: false,
                         ..default()
@@ -244,14 +245,15 @@ fn random_enemy_spawn(
             let mut rng = rand::thread_rng();
             let random_number = rng.gen_range(0..3);
             let selected_enemy = &texture_atlas_handle[random_number];
+
             commands.spawn((
                 SpriteSheetBundle {
                     texture_atlas: selected_enemy.handle.clone(),
                     sprite: TextureAtlasSprite::new(0),
                     transform: Transform {
                         translation: Vec3::new(
-                            rng.gen_range(LEFT_BOUND..RIGHT_BOUND),
-                            -110. * SCALE,
+                            rng.gen_range(-ENEMIES_X_BOUNDS..ENEMIES_X_BOUNDS),
+                            rng.gen_range(-(ENEMIES_Y_BOUNDS - 120.)..ENEMIES_Y_BOUNDS),
                             2.,
                         ),
                         scale: Vec3::splat(SCALE),
