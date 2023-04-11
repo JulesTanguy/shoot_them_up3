@@ -1,4 +1,4 @@
-use bevy::{prelude::*, render::camera::ScalingMode};
+use bevy::prelude::*;
 use rand::Rng;
 
 const SCROLL_SPEED: f32 = -1. * SCALE;
